@@ -10,32 +10,31 @@ open Amazon.Kinesis.Model
 open log4net.Appender
 open log4net.Core
 
+open Newtonsoft.Json;
+
 type Agent<'T> = MailboxProcessor<'T>
 
 [<AutoOpen>]
 module internal Model =
     type LogEvent =
         {
+            [<JsonPropertyAttribute>]
             LoggerName          : string
+            [<JsonPropertyAttribute>]
             Level               : string
+            [<JsonPropertyAttribute>]
             Timestamp           : DateTime
+            [<JsonPropertyAttribute>]
             ThreadName          : string
+            [<JsonPropertyAttribute>]
             CallerInfo          : string
+            [<JsonPropertyAttribute>]
             Message             : string
+            [<JsonPropertyAttribute>]
             ExceptionMessage    : string
+            [<JsonPropertyAttribute>]
             StackTrace          : string
         }
-
-        member this.ToJson() = 
-            sprintf "{\"LoggerName\":\"%s\",\"Level\":\"%s\",\"Timestamp\":\"%s\",\"ThreadName\":\"%s\",\"CallerInfo\":\"%s\",\"Message\":\"%s\",\"ExceptionMessage\":\"%s\",\"StackTrace\":\"%s\"}" 
-                    this.LoggerName 
-                    this.Level 
-                    (this.Timestamp.ToString("yyyy-MM-dd HH:mm:ss.fffffff"))
-                    this.ThreadName
-                    this.CallerInfo
-                    this.Message
-                    this.ExceptionMessage
-                    this.StackTrace
 
 type KinesisAppender () as this =
     inherit AppenderSkeleton()
@@ -48,7 +47,7 @@ type KinesisAppender () as this =
                 while true do
                     let! evt = inbox.Receive()
 
-                    let payload = evt.ToJson() |> System.Text.Encoding.UTF8.GetBytes
+                    let payload = JsonConvert.SerializeObject(evt) |> System.Text.Encoding.UTF8.GetBytes
                     use stream  = new MemoryStream(payload)
                     let req = new PutRecordRequest(StreamName   = this.StreamName,
                                                    PartitionKey = Guid.NewGuid().ToString(),
